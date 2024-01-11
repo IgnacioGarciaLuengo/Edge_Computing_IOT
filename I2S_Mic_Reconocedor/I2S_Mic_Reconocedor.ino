@@ -24,6 +24,10 @@ float espectrograma[N_TRAMAS_ESPECTROGRAMA_EXTENDIDO][N_PUNTOS_FRECUENCIA_ESPECT
 volatile uint16_t indiceSiguienteTramaEspectrograma;
 volatile bool calibrandoMicrofono;
 
+int16_t ventanaHamming[VENTANA_MUESTRAS_FFT];
+
+
+float puntuaciones[N_CLASES_RED_NEURONAL];
 
 void ResetearDispositivo(void)
 {
@@ -91,6 +95,11 @@ void ObtenerEspectrograma(void *arg)
   Serial.printf("Función ObtenerEspectrograma: ejecutando en núcleo %d\n", xPortGetCoreID());
 
   fft_real= fft_init(VENTANA_MUESTRAS_FFT, FFT_REAL, FFT_FORWARD, NULL, NULL);
+
+  for (int i = 0; i < VENTANA_MUESTRAS_FFT; i++)
+  {
+    ventanaHamming[i] = 0.54 - 0.46 * cos(2 * PI * i / (VENTANA_MUESTRAS_FFT - 1));
+  }
   while(true)
   {
     int32_t *p_buffer_i2s= (int32_t *)buffer_i2s;
@@ -107,7 +116,7 @@ void ObtenerEspectrograma(void *arg)
     if(!calibrandoMicrofono)
     {
       for(i=0;i<MITAD_VENTANA_MUESTRAS_FFT;i++)
-        fft_real->input[i]= (float)bufferAudioPrevio[i];
+        fft_real->input[i]= ventanaHamming[i]*(float)bufferAudioPrevio[i];
 
       for(i=0;i<MITAD_VENTANA_MUESTRAS_FFT;i++)
       {
@@ -196,13 +205,61 @@ void setup()
     M5.Lcd.drawString("¡Error microfono!", 10, 10);
 }
 
-
-void loop()
-{  
-
-
-
-  M5.update();
-  if(M5.Axp.GetBtnPress()==BOTON_ENCENDIDO_PULSACION_CORTA)
-    ResetearDispositivo();
+String obtenerNombreClase(int clase)
+{
+  switch (clase)
+  {
+  case 0:
+    return "cero";
+  case 1:
+    return "cruz";
+  case 2:
+    return "no";
+  case 3:
+    return "ruido";
+  case 4:
+    return "si";
+  default:
+    return "Desconocida";
+  }
 }
+void loop() {
+    // Cargar entrada de la red neuronal con el contenido de los espectrogramas
+    if (CargarEntradaRedNeuronal(indiceSiguienteTramaEspectrograma, N_TRAMAS_ESPECTROGRAMA_EXTENDIDO, espectrograma)) {
+        // Invocar la red neuronal para obtener las probabilidades de salida por clase
+        if (InvocarRedNeuronal(puntuaciones)) {
+            int claseReconocida = -1;
+            float maxProbabilidad = 0.0;
+
+            Serial.println("Probabilidades de salida:");
+            for (int i = 0; i < N_CLASES_RED_NEURONAL; i++) {
+                Serial.printf("Clase %d (%s): %.4f\n", i, obtenerNombreClase(i).c_str(), puntuaciones[i]);
+                if (puntuaciones[i] > maxProbabilidad) {
+                    maxProbabilidad = puntuaciones[i];
+                    claseReconocida = i;
+                }
+            }
+
+            if (claseReconocida != -1 && maxProbabilidad >= 0.3) {
+                String nombreClaseReconocida = obtenerNombreClase(claseReconocida);
+                M5.Lcd.fillRect(80, 50, 240, 80, TFT_BLACK);  // Borrar la región anterior                    
+                M5.Lcd.drawString(nombreClaseReconocida, 80, 50);
+            }
+            delay(1000);
+        }
+    }
+
+    // Actualización del dispositivo y comprobación de pulsación del botón
+    M5.update();
+    if (M5.Axp.GetBtnPress() == BOTON_ENCENDIDO_PULSACION_CORTA) {
+        ResetearDispositivo();
+    }
+}
+
+
+
+
+
+
+
+

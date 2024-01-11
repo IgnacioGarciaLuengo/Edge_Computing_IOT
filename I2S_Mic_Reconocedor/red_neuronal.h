@@ -3,9 +3,9 @@
 
 #define N_TRAMAS_ESPECTROGRAMA_EXTENDIDO      80
 
-#define N_TRAMAS_ESPECTROGRAMA                62
-#define N_PUNTOS_FRECUENCIA_ESPECTROGRAMA     128
-#define N_CLASES_RED_NEURONAL                 6
+#define N_TRAMAS_ESPECTROGRAMA                69
+#define N_PUNTOS_FRECUENCIA_ESPECTROGRAMA     129
+#define N_CLASES_RED_NEURONAL                 5
 
 bool InicializarRedNeuronal(void);
 bool CargarEntradaRedNeuronal(uint16_t indiceSiguienteTramaEspectrograma,
