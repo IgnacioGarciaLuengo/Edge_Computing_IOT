@@ -226,26 +226,35 @@ String obtenerNombreClase(int clase)
 void loop() {
     // Cargar entrada de la red neuronal con el contenido de los espectrogramas
     if (CargarEntradaRedNeuronal(indiceSiguienteTramaEspectrograma, N_TRAMAS_ESPECTROGRAMA_EXTENDIDO, espectrograma)) {
-        // Invocar la red neuronal para obtener las probabilidades de salida por clase
-        if (InvocarRedNeuronal(puntuaciones)) {
-            int claseReconocida = -1;
-            float maxProbabilidad = 0.0;
+        // Verificar que el espectrograma actual sea diferente al anterior
+        if (CompararEspectrogramas()) {
+            // Invocar la red neuronal para obtener las probabilidades de salida por clase
+            if (InvocarRedNeuronal(puntuaciones)) {
+                int claseReconocida = -1;
+                float maxProbabilidad = 0.0;
 
-            Serial.println("Probabilidades de salida:");
-            for (int i = 0; i < N_CLASES_RED_NEURONAL; i++) {
-                Serial.printf("Clase %d (%s): %.4f\n", i, obtenerNombreClase(i).c_str(), puntuaciones[i]);
-                if (puntuaciones[i] > maxProbabilidad) {
-                    maxProbabilidad = puntuaciones[i];
-                    claseReconocida = i;
+                Serial.println("Probabilidades de salida:");
+                for (int i = 0; i < N_CLASES_RED_NEURONAL; i++) {
+                    Serial.printf("Clase %d (%s): %.4f\n", i, obtenerNombreClase(i).c_str(), puntuaciones[i]);
+                    if (puntuaciones[i] > maxProbabilidad) {
+                        maxProbabilidad = puntuaciones[i];
+                        claseReconocida = i;
+                    }
                 }
-            }
 
-            if (claseReconocida != -1 && maxProbabilidad >= 0.3) {
-                String nombreClaseReconocida = obtenerNombreClase(claseReconocida);
-                M5.Lcd.fillRect(80, 50, 240, 80, TFT_BLACK);  // Borrar la región anterior                    
-                M5.Lcd.drawString(nombreClaseReconocida, 80, 50);
+                if (claseReconocida != -1 && maxProbabilidad >= 0.3) {
+                    String nombreClaseReconocida = obtenerNombreClase(claseReconocida);
+                    M5.Lcd.fillRect(80, 50, 240, 80, TFT_BLACK);  // Borrar la región anterior                    
+                    M5.Lcd.drawString(nombreClaseReconocida, 80, 50);
+                }
+            } else {
+                Serial.println("Error al invocar la red neuronal.");
             }
-            delay(1000);
+        } else {
+            // Imprimir mensaje de error en la pantalla y la consola
+            M5.Lcd.fillRect(80, 50, 240, 80, TFT_BLACK);
+            M5.Lcd.drawString("Error de espectrograma", 80, 50);
+            Serial.println("Error de espectrograma: El espectrograma actual es igual al anterior.");
         }
     }
 
@@ -255,6 +264,23 @@ void loop() {
         ResetearDispositivo();
     }
 }
+
+// Función para comparar el espectrograma actual con el anterior
+bool CompararEspectrogramas() {
+    static float espectrogramaAnterior[N_PUNTOS_FRECUENCIA_ESPECTROGRAMA];
+    
+    // Compara los valores de los espectrogramas
+    for (int i = 0; i < N_PUNTOS_FRECUENCIA_ESPECTROGRAMA; i++) {
+        if (espectrograma[indiceSiguienteTramaEspectrograma][i] != espectrogramaAnterior[i]) {
+            // Copia el espectrograma actual al espectrograma anterior para la próxima comparación
+            memcpy(espectrogramaAnterior, espectrograma[indiceSiguienteTramaEspectrograma], sizeof(espectrogramaAnterior));
+            return true;  // Los espectrogramas son diferentes
+        }
+    }
+
+    return false;  // Los espectrogramas son iguales
+}
+
 
 
 
