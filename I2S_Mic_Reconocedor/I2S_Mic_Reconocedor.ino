@@ -223,30 +223,49 @@ String obtenerNombreClase(int clase)
     return "Desconocida";
   }
 }
+
+
 void loop() {
     // Cargar entrada de la red neuronal con el contenido de los espectrogramas
     if (CargarEntradaRedNeuronal(indiceSiguienteTramaEspectrograma, N_TRAMAS_ESPECTROGRAMA_EXTENDIDO, espectrograma)) {
-            if (InvocarRedNeuronal(puntuaciones)) {
-                int claseReconocida = -1;
-                float maxProbabilidad = 0.0;
+        if (InvocarRedNeuronal(puntuaciones)) {
+            int claseReconocida = -1;
+            float maxProbabilidad = 0.0;
 
-                Serial.println("Probabilidades de salida:");
-                for (int i = 0; i < N_CLASES_RED_NEURONAL; i++) {
-                    Serial.printf("Clase %d (%s): %.4f\n", i, obtenerNombreClase(i).c_str(), puntuaciones[i]);
-                    if (puntuaciones[i] > maxProbabilidad) {
-                        maxProbabilidad = puntuaciones[i];
-                        claseReconocida = i;
-                    }
-                }
+            // Borrar la región de la pantalla antes de escribir el nuevo contenido
+            M5.Lcd.fillRect(0, 50, 320, 120, BLACK);
 
-                if (claseReconocida != -1 && maxProbabilidad >= 0.3) {
-                    String nombreClaseReconocida = obtenerNombreClase(claseReconocida);
-                    M5.Lcd.fillRect(80, 50, 240, 80, TFT_BLACK);  // Borrar la región anterior                    
-                    M5.Lcd.drawString(nombreClaseReconocida, 80, 50);
+            M5.Lcd.drawString(String("Probs.:"), 20, 50);
+            String puntuacionesString = "[";
+            for (int i = 0; i < 5; i++) {
+                puntuacionesString += String(puntuaciones[i]);
+                if (i < 4) {
+                    puntuacionesString += ",";
                 }
-            } else {
-                Serial.println("Error al invocar la red neuronal.");
             }
+            puntuacionesString += "]";
+            M5.Lcd.drawString(puntuacionesString, 10, 70);
+
+            Serial.println("Probabilidades de salida:");
+            for (int i = 0; i < N_CLASES_RED_NEURONAL; i++) {
+                Serial.printf("Clase %d (%s): %.4f\n", i, obtenerNombreClase(i).c_str(), puntuaciones[i]);
+                if (puntuaciones[i] > maxProbabilidad) {
+                    maxProbabilidad = puntuaciones[i];
+                    claseReconocida = i;
+                }
+            }
+
+            if (claseReconocida != -1 && maxProbabilidad >= 0.3) {
+                String nombreClaseReconocida = obtenerNombreClase(claseReconocida);
+
+                // Borrar la región de la pantalla antes de escribir el nuevo contenido
+                M5.Lcd.fillRect(0, 90, 320, 120, BLACK);
+
+                M5.Lcd.drawString(String("Comando: ") + String(nombreClaseReconocida), 10, 90);
+            }
+        } else {
+            Serial.println("Error al invocar la red neuronal.");
+        }
     }
 
     // Actualización del dispositivo y comprobación de pulsación del botón
@@ -255,6 +274,8 @@ void loop() {
         ResetearDispositivo();
     }
 }
+
+
 
 
 
