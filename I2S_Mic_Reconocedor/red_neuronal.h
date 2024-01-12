@@ -3,7 +3,7 @@
 
 #define N_TRAMAS_ESPECTROGRAMA_EXTENDIDO      70
 
-#define N_TRAMAS_ESPECTROGRAMA                69
+#define N_TRAMAS_ESPECTROGRAMA                61
 #define N_PUNTOS_FRECUENCIA_ESPECTROGRAMA     129
 #define N_CLASES_RED_NEURONAL                 5
 

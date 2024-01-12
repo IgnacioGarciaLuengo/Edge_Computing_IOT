@@ -226,9 +226,6 @@ String obtenerNombreClase(int clase)
 void loop() {
     // Cargar entrada de la red neuronal con el contenido de los espectrogramas
     if (CargarEntradaRedNeuronal(indiceSiguienteTramaEspectrograma, N_TRAMAS_ESPECTROGRAMA_EXTENDIDO, espectrograma)) {
-        // Verificar que el espectrograma actual sea diferente al anterior
-        if (CompararEspectrogramas()) {
-            // Invocar la red neuronal para obtener las probabilidades de salida por clase
             if (InvocarRedNeuronal(puntuaciones)) {
                 int claseReconocida = -1;
                 float maxProbabilidad = 0.0;
@@ -250,12 +247,6 @@ void loop() {
             } else {
                 Serial.println("Error al invocar la red neuronal.");
             }
-        } else {
-            // Imprimir mensaje de error en la pantalla y la consola
-            M5.Lcd.fillRect(80, 50, 240, 80, TFT_BLACK);
-            M5.Lcd.drawString("Error de espectrograma", 80, 50);
-            Serial.println("Error de espectrograma: El espectrograma actual es igual al anterior.");
-        }
     }
 
     // Actualización del dispositivo y comprobación de pulsación del botón
@@ -265,21 +256,7 @@ void loop() {
     }
 }
 
-// Función para comparar el espectrograma actual con el anterior
-bool CompararEspectrogramas() {
-    static float espectrogramaAnterior[N_PUNTOS_FRECUENCIA_ESPECTROGRAMA];
-    
-    // Compara los valores de los espectrogramas
-    for (int i = 0; i < N_PUNTOS_FRECUENCIA_ESPECTROGRAMA; i++) {
-        if (espectrograma[indiceSiguienteTramaEspectrograma][i] != espectrogramaAnterior[i]) {
-            // Copia el espectrograma actual al espectrograma anterior para la próxima comparación
-            memcpy(espectrogramaAnterior, espectrograma[indiceSiguienteTramaEspectrograma], sizeof(espectrogramaAnterior));
-            return true;  // Los espectrogramas son diferentes
-        }
-    }
 
-    return false;  // Los espectrogramas son iguales
-}
 
 
 
